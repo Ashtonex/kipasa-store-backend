@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -6,7 +5,7 @@ const Stripe = require('stripe');
 
 dotenv.config();
 const app = express();
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY); // ✅ Make sure this is your secret key
 
 app.use(cors());
 app.use(express.json());
@@ -16,12 +15,11 @@ app.post('/create-checkout-session', async (req, res) => {
 
   try {
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
       line_items: [{
         price_data: {
           currency: 'usd',
-          product_data: { name },
-          unit_amount: price,
+          product_data: { name }, // ✅ required for inline product
+          unit_amount: Math.round(price * 100), // ✅ convert dollars to cents
         },
         quantity: 1,
       }],
@@ -30,8 +28,9 @@ app.post('/create-checkout-session', async (req, res) => {
       cancel_url: `${process.env.FRONTEND_URL}/store`,
     });
 
-    res.json({ id: session.id });
+    res.json({ url: session.url }); // ✅ return full URL, not just session ID
   } catch (err) {
+    console.error('Stripe error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
